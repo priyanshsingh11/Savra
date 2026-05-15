@@ -8,4 +8,12 @@ redis==5.0.4
 python-pptx==1.0.2
 axios-python==0.1.0 # Optional, for future use
 pytest==8.2.2
-httpx==0.27.0
+httpx==0.27.2
+sentence-transformers
+numpy
+scikit-learn
+supabase
+psycopg2-binary
+gunicorn
+uvicorn
+python-multipart
