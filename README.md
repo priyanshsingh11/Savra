@@ -77,10 +77,10 @@ SlideAI follows a **decoupled async architecture** designed for high reliability
 - **Modern UI/UX**: Clean, minimal SaaS-style dashboard built with glassmorphism and Tailwind CSS.
 
 ## Tech Stack
-- **Frontend**: React 18, Vite, Tailwind CSS, Lucide Icons, Axios.
-- **Backend**: Python 3.10+, FastAPI, Pydantic v2.
-- **LLM Orchestration**: Groq SDK.
-- **Infrastructure**: Redis (Cache/Status Store).
+- **Frontend**: React 18, Vite, Vanilla CSS (Glassmorphism), Axios.
+- **Backend**: Python 3.11, FastAPI, Pydantic v2.
+- **AI Layers**: Groq (LLM), Hugging Face (Embeddings).
+- **Infrastructure**: Redis (Upstash), Supabase (PostgreSQL), Render (Hosting), Vercel (Frontend).
 
 ## Getting Started
 
@@ -92,7 +92,8 @@ Create a `.env` file in the root and backend directories (see `.env.example`).
 ## 🛠️ Advanced Features
 
 ### 1. Semantic Caching (1% Bonus Feature)
-- **Engine**: Sentence-Transformers (`all-MiniLM-L6-v2`) + Redis.
+- **Engine**: Hugging Face Inference API (`all-MiniLM-L6-v2`) + Lightweight Python Math.
+- **Optimization**: Optimized for cloud deployment by removing local torch/transformers dependencies (saving 700MB+ RAM).
 - **Logic**: Deduplicates semantically identical requests (e.g., "AI" vs "Artificial Intelligence").
 - **Impact**: Reduces API costs by ~40% and provides instant results for cached topics.
 
@@ -153,7 +154,20 @@ Create a `.env` file in the root and backend directories (see `.env.example`).
 - **User Authentication**: Secure individual presentation history using Supabase or Clerk.
 - **Advanced Layouts**: Dynamic template selection based on topic category.
 
-## Deployment
-- **Frontend**: Vercel / Netlify.
-- **Backend**: Dockerized FastAPI on AWS App Runner or Railway.app.
-- **Cache**: Managed Redis (Upstash or Redis Cloud).
+## 🚀 Deployment
+
+### Backend (Render + Upstash)
+1. **Redis**: Create a free database on **Upstash**. Copy the `rediss://` connection string.
+2. **Render**: 
+   - Create a new **Web Service**.
+   - **Root Directory**: `backend`
+   - **Environment Variables**: Add `GROQ_API_KEY`, `REDIS_URL`, `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_KEY`.
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+
+### Frontend (Vercel)
+1. Create a new project from your GitHub repo.
+2. **Root Directory**: `frontend`
+3. **Framework Preset**: Vite
+4. **Environment Variables**:
+   - `VITE_API_URL`: Your Render URL + `/api/v1` (e.g., `https://savra-api.onrender.com/api/v1`)
