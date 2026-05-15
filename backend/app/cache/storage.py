@@ -47,10 +47,36 @@ class CacheManager:
     def get_job(self, job_id: str) -> Optional[Dict]:
         return self.get(f"job:{job_id}")
 
-    def update_job(self, job_id: str, data: Dict):
+    def update_job(self, job_id: str, data: dict):
         current = self.get_job(job_id) or {}
         current.update(data)
-        self.set(f"job:{job_id}", current)
+        self.redis.setex(f"job:{job_id}", self.ttl, json.dumps(current))
+
+    def record_stat(self, stat_name: str):
+        """Increment a counter in Redis."""
+        self.redis.incr(f"stats:{stat_name}")
+
+    def get_stats(self):
+        """Retrieve all stats and calculate savings."""
+        pipeline = self.redis.pipeline()
+        pipeline.get("stats:total_requests")
+        pipeline.get("stats:semantic_hits")
+        pipeline.get("stats:exact_hits")
+        pipeline.get("stats:llm_calls")
+        
+        res = pipeline.execute()
+        
+        stats = {
+            "total": int(res[0] or 0),
+            "semantic_hits": int(res[1] or 0),
+            "exact_hits": int(res[2] or 0),
+            "llm_calls": int(res[3] or 0),
+        }
+        
+        # Calculate savings based on Savra's ₹15 per generation cost
+        stats["total_hits"] = stats["semantic_hits"] + stats["exact_hits"]
+        stats["rupees_saved"] = stats["total_hits"] * 15
+        return stats
 
 # Global singleton
 cache_manager = CacheManager()

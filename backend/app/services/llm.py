@@ -12,7 +12,30 @@ logger = logging.getLogger(__name__)
 class LLMService:
     def __init__(self):
         self.client = Groq(api_key=settings.GROQ_API_KEY)
-        self.model = "llama-3.3-70b-versatile"
+        self.heavy_model = "llama-3.3-70b-versatile"
+        self.light_model = "llama-3.1-8b-instant"
+        
+        self.complex_keywords = [
+            "quantum", "physics", "advanced", "molecular", "history of", 
+            "comprehensive", "deep learning", "architecture", "economics"
+        ]
+
+    def _choose_model(self, topic: str, slides: int) -> str:
+        """
+        Smart Router: Analyzes topic to save costs.
+        """
+        topic_lower = topic.lower()
+        
+        # Heuristic 1: If topic is very short and not in complex keywords, use light model
+        is_complex = any(kw in topic_lower for kw in self.complex_keywords)
+        is_long = len(topic) > 25
+        
+        if not is_complex and not is_long and slides <= 5:
+            logger.info(f"[ROUTER] Routing '{topic}' to LIGHT model ({self.light_model})")
+            return self.light_model
+            
+        logger.info(f"[ROUTER] Routing '{topic}' to HEAVY model ({self.heavy_model})")
+        return self.heavy_model
 
     async def generate_slides(self, topic: str, grade: str, slides: int) -> Dict[str, Any]:
         """
@@ -23,6 +46,7 @@ class LLMService:
             return await self._mock_generate(topic, grade, slides)
 
         logger.info(f"GROQ ATTEMPT: {topic} (Grade {grade})")
+        selected_model = self._choose_model(topic, slides)
         
         system_prompt = f"""You are a slide generator. Return ONLY JSON.
         Format:
@@ -40,7 +64,7 @@ class LLMService:
             response = await loop.run_in_executor(
                 None, 
                 lambda: self.client.chat.completions.create(
-                    model=self.model,
+                    model=selected_model,
                     messages=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": f"Generate {slides} slides about {topic}."}

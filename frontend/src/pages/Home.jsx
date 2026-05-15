@@ -31,30 +31,9 @@ const Home = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-['Inter'] selection:bg-brand-100 selection:text-brand-900">
-      {/* Abstract Background Decor */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-brand-200/20 rounded-full blur-[120px] animate-pulse-slow"></div>
-        <div className="absolute top-[60%] -right-[5%] w-[30%] h-[30%] bg-indigo-200/20 rounded-full blur-[100px] animate-pulse-slow delay-1000"></div>
-      </div>
+    <div className="flex flex-col items-center">
 
-      <nav className="relative z-10 flex items-center justify-between px-8 py-6 max-w-7xl mx-auto">
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center shadow-lg shadow-brand-200">
-            <Sparkles className="text-white" size={20} />
-          </div>
-          <span className="text-xl font-bold tracking-tight font-['Outfit']">SlideAI</span>
-        </div>
-        <div className="flex items-center gap-6">
-          <button className="text-slate-500 hover:text-brand-600 font-medium transition-colors hidden sm:block">Features</button>
-          <button className="text-slate-500 hover:text-brand-600 font-medium transition-colors hidden sm:block">Pricing</button>
-          <button className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-slate-700 hover:bg-slate-50 shadow-sm transition-all">
-            <History size={18} /> My Library
-          </button>
-        </div>
-      </nav>
-
-      <main className="relative z-10 max-w-7xl mx-auto px-6 py-12 flex flex-col items-center">
+      <div className="relative z-10 w-full flex flex-col items-center">
         {!jobId && !isSubmitting && (
           <div className="text-center space-y-4 mb-12 animate-in fade-in slide-in-from-top-4 duration-1000">
             <h1 className="text-5xl md:text-6xl font-extrabold text-slate-900 tracking-tight font-['Outfit']">
@@ -96,7 +75,7 @@ const Home = () => {
             </div>
           )}
         </div>
-      </main>
+      </div>
 
       {jobId && status !== 'idle' && (
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-20">

@@ -30,6 +30,8 @@ Transient failures (LLM timeouts, API rate limits) are handled using an exponent
 - **Action**: On failure, the job is marked as `failed` with a descriptive error message returned to the UI.
 
 ### B. Graceful Failures
+- **Smart Model Routing**: Heuristic-based routing that sends simple queries to `Llama-3.1-8B-Instant` (low cost/latency) and complex/technical queries to `Llama-3.3-70B-Versatile`.
+- **Circuit Breaker Pattern**: Intelligent monitoring of LLM health; automatically falls back to safe states if Groq/Gemini hits 503 errors.
 - The `CacheManager` uses a try-except block to fall back to local RAM if Redis is down.
 - Frontend includes error boundaries and "Try Again" triggers to handle backend connectivity issues.
 

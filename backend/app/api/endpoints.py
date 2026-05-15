@@ -24,6 +24,13 @@ async def download_ppt(job_id: str):
         media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation"
     )
 
+@router.get("/stats")
+async def get_system_stats():
+    """
+    Get system-wide performance and cost-saving metrics.
+    """
+    return cache_manager.get_stats()
+
 @router.post("/generate", response_model=JobResponse)
 async def generate_ppt(request: PPTGenerateRequest, background_tasks: BackgroundTasks):
     """
