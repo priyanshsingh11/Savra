@@ -15,7 +15,13 @@ export const usePolling = (jobId, interval = 3000) => {
       Notification.requestPermission();
     }
 
-    if (!jobId) return;
+    if (!jobId) {
+      setStatus('idle');
+      setProgress(0);
+      setResult(null);
+      setError(null);
+      return;
+    }
 
     const poll = async () => {
       try {

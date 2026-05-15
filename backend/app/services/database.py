@@ -20,6 +20,7 @@ class DatabaseService:
         Persistently save a completed presentation to Supabase.
         """
         if not self.client:
+            logger.warning("[SUPABASE] Missing SUPABASE_URL or SUPABASE_KEY in .env. Skipping sync.")
             return
 
         try:
@@ -30,11 +31,11 @@ class DatabaseService:
                 "content": result,
                 "created_at": "now()"
             }
-            # This assumes you have a table named 'presentations'
             self.client.table("presentations").upsert(data).execute()
-            logger.info(f"Presentation {job_id} synced to Supabase.")
+            logger.info(f"[SUPABASE SUCCESS] Job {job_id} synced.")
         except Exception as e:
-            logger.warning(f"Failed to sync to Supabase (check if 'presentations' table exists): {e}")
+            logger.error(f"[SUPABASE ERROR] Failed to sync presentation: {str(e)}")
+            logger.error("TIP: Ensure you have created the 'presentations' table in your Supabase dashboard.")
 
     def get_history(self, limit: int = 10) -> List[Dict[str, Any]]:
         """

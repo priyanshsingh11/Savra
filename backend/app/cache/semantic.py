@@ -9,7 +9,7 @@ from typing import Optional, Tuple
 logger = logging.getLogger(__name__)
 
 class SemanticCache:
-    def __init__(self, model_name: str = "all-MiniLM-L6-v2", threshold: float = 0.92):
+    def __init__(self, model_name: str = "all-MiniLM-L6-v2", threshold: float = 0.80):
         self.threshold = threshold
         self.persist_path = "app/static/semantic_index.json"
         self.vectors_path = "app/static/semantic_vectors.npy"
@@ -41,6 +41,9 @@ class SemanticCache:
         except Exception as e:
             logger.error(f"Failed to save semantic index: {e}")
 
+    def _normalize(self, text: str) -> str:
+        return text.lower().strip()
+
     def get_embedding(self, text: str) -> np.array:
         return self.model.encode([text])[0]
 
@@ -48,6 +51,7 @@ class SemanticCache:
         if not self.metadata or self.vectors is None:
             return None
 
+        topic = self._normalize(topic)
         query_text = f"{topic} {grade}".lower()
         query_vector = self.get_embedding(query_text).reshape(1, -1)
         

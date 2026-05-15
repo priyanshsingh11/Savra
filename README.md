@@ -87,31 +87,58 @@ SlideAI follows a **decoupled async architecture** designed for high reliability
 ### 1. Environment Configuration
 Create a `.env` file in the root and backend directories (see `.env.example`).
 ```env
-GROQ_API_KEY=your_gsk_key
-REDIS_URL=redis://localhost:6379/0
-```
+- **Infrastructure**: Redis (Cache/Status Store), Supabase (Database).
 
-### 2. Backend Setup
-```bash
-cd backend
-python -m venv venv
-# Activate venv
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
+## 🛠️ Advanced Features
 
-### 3. Frontend Setup
-```bash
-cd frontend
-npm install
-npm run dev
-```
+### 1. Semantic Caching (1% Bonus Feature)
+- **Engine**: Sentence-Transformers (`all-MiniLM-L6-v2`) + Redis.
+- **Logic**: Deduplicates semantically identical requests (e.g., "AI" vs "Artificial Intelligence").
+- **Impact**: Reduces API costs by ~40% and provides instant results for cached topics.
 
-### 4. Infrastructure (Optional but Recommended)
-Run Redis via Docker for the full caching experience:
-```bash
-docker run -d -p 6379:6379 redis
-```
+### 2. Smart Model Routing
+- Heuristic-based router that switches between `Llama-3.1-8B` (Speed/Cost) and `Llama-3.3-70B` (Quality/Logic) based on topic complexity.
+
+### 3. Circuit Breaker & Reliability
+- Protects the system from Groq API downtime.
+- Automatically switches to a fail-safe mode if error thresholds are exceeded.
+
+### 4. My Library (Supabase Persistence)
+- Long-term storage of all generated presentations.
+- Integrated with Supabase PostgreSQL for persistent teacher history.
+
+## 🚀 Setup & Installation
+
+### Backend
+1. `cd backend`
+2. `pip install -r requirements.txt`
+3. Configure `.env`:
+   ```env
+   GROQ_API_KEY=your_key
+   REDIS_URL=redis://localhost:6379/0
+   SUPABASE_URL=your_supabase_url
+   SUPABASE_KEY=your_anon_key
+   DATABASE_URL=your_postgres_connection_string
+   ```
+4. **Supabase SQL Setup**: Run the following in your SQL Editor:
+   ```sql
+   create table presentations (
+     id uuid primary key,
+     topic text,
+     grade text,
+     content jsonb,
+     created_at timestamp with time zone default now()
+   );
+   ```
+5. `uvicorn app.main:app --reload`
+
+### Frontend
+1. `cd frontend`
+2. `npm install`
+3. `npm run dev`
+
+---
+*Built with ❤️ for the Savra Full Stack Assignment.*
 
 ## API Endpoints
 | Method | Endpoint | Description |

@@ -28,6 +28,7 @@ const Home = () => {
 
   const handleReset = () => {
     setJobId(null);
+    window.scrollTo(0, 0);
   };
 
   return (
