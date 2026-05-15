@@ -1,4 +1,5 @@
 import numpy as np
+import os
 import logging
 import json
 from sentence_transformers import SentenceTransformer
@@ -10,55 +11,73 @@ logger = logging.getLogger(__name__)
 class SemanticCache:
     def __init__(self, model_name: str = "all-MiniLM-L6-v2", threshold: float = 0.92):
         self.threshold = threshold
+        self.persist_path = "app/static/semantic_index.json"
+        self.vectors_path = "app/static/semantic_vectors.npy"
+        
         logger.info(f"Loading Semantic model: {model_name}...")
         self.model = SentenceTransformer(model_name)
-        # In a real distributed system, these would be in a Vector DB like Pinecone/Milvus
-        # For this scalable prototype, we'll use a high-performance local index synced with Redis
-        self.index = [] # List of { "vector": np.array, "cache_key": str, "topic": str }
+        
+        self.metadata = [] # List of { "cache_key": str, "topic": str }
+        self.vectors = None # Numpy array of vectors
+        
+        self._load_from_disk()
+
+    def _load_from_disk(self):
+        if os.path.exists(self.persist_path) and os.path.exists(self.vectors_path):
+            try:
+                with open(self.persist_path, 'r') as f:
+                    self.metadata = json.load(f)
+                self.vectors = np.load(self.vectors_path)
+                logger.info(f"[SEMANTIC LOADED] Restored {len(self.metadata)} topics from disk.")
+            except Exception as e:
+                logger.error(f"Failed to load semantic index: {e}")
+
+    def _save_to_disk(self):
+        try:
+            os.makedirs(os.path.dirname(self.persist_path), exist_ok=True)
+            with open(self.persist_path, 'w') as f:
+                json.dump(self.metadata, f)
+            np.save(self.vectors_path, self.vectors)
+        except Exception as e:
+            logger.error(f"Failed to save semantic index: {e}")
 
     def get_embedding(self, text: str) -> np.array:
         return self.model.encode([text])[0]
 
     def find_similar(self, topic: str, grade: str) -> Optional[str]:
-        """
-        Searches the semantic index for a similar topic + grade combo.
-        """
-        if not self.index:
+        if not self.metadata or self.vectors is None:
             return None
 
         query_text = f"{topic} {grade}".lower()
         query_vector = self.get_embedding(query_text).reshape(1, -1)
         
-        # Calculate similarities
-        best_score = 0
-        best_key = None
-        best_topic = ""
-
-        for item in self.index:
-            score = cosine_similarity(query_vector, item["vector"].reshape(1, -1))[0][0]
-            if score > best_score:
-                best_score = score
-                best_key = item["cache_key"]
-                best_topic = item["topic"]
+        # Batch calculate similarities using sklearn
+        similarities = cosine_similarity(query_vector, self.vectors)[0]
+        best_idx = np.argmax(similarities)
+        best_score = similarities[best_idx]
 
         if best_score >= self.threshold:
-            logger.info(f"[SEMANTIC HIT] Found match: '{topic}' -> '{best_topic}' (Score: {best_score:.4f})")
-            return best_key
+            match = self.metadata[best_idx]
+            logger.info(f"[SEMANTIC HIT] Found match: '{topic}' -> '{match['topic']}' (Score: {best_score:.4f})")
+            return match["cache_key"]
         
-        logger.info(f"[SEMANTIC MISS] Best match: '{topic}' -> '{best_topic}' (Score: {best_score:.4f})")
         return None
 
     def add(self, topic: str, grade: str, cache_key: str):
-        """
-        Adds a new topic to the semantic index.
-        """
         query_text = f"{topic} {grade}".lower()
         vector = self.get_embedding(query_text)
-        self.index.append({
-            "vector": vector,
+        
+        self.metadata.append({
             "cache_key": cache_key,
             "topic": topic
         })
+        
+        if self.vectors is None:
+            self.vectors = vector.reshape(1, -1)
+        else:
+            self.vectors = np.vstack([self.vectors, vector.reshape(1, -1)])
+            
+        self._save_to_disk()
         logger.info(f"[SEMANTIC INDEXED] Added '{topic}' to the index.")
 
 # Singleton instance
