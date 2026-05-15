@@ -2,10 +2,10 @@
 
 SlideAI is a production-grade asynchronous platform designed to transform topics into structured PowerPoint presentation content using Large Language Models (LLMs). Built with a focus on scalability, cost-optimization, and reliable background processing.
 
-## 🚀 Project Overview
+## Project Overview
 The system allows users to submit a topic and grade level, which triggers an asynchronous generation pipeline. Instead of blocking the user, the system provides a job ID, allowing the frontend to poll for status updates while the backend handles LLM orchestration and caching.
 
-## 🏗️ System Architecture
+## System Architecture
 ```mermaid
 graph TD
     subgraph User_Layer [User Layer]
@@ -68,7 +68,7 @@ graph TD
 
 SlideAI follows a **decoupled async architecture** designed for high reliability and cost-efficiency.
 
-## ✨ Core Features
+## Core Features
 - **Async Job Queue**: Non-blocking request handling with UUID job tracking and progress polling.
 - **Semantic Caching (Bonus Challenge)**: Uses `Sentence-Transformers` to identify semantically similar topics (e.g., "Ancient Rome" vs. "Roman Empire History"), reducing LLM costs by 90% for common educational queries.
 - **Circuit Breaker Pattern**: Intelligent monitoring of LLM health; automatically bypasses the API and falls back to safe states if Groq/Gemini hits 503 errors.
@@ -76,13 +76,13 @@ SlideAI follows a **decoupled async architecture** designed for high reliability
 - **Production Observability**: Built-in tracking for execution time, cache-hit status, and real-time background task progress.
 - **Modern UI/UX**: Clean, minimal SaaS-style dashboard built with glassmorphism and Tailwind CSS.
 
-## 🛠️ Tech Stack
+## Tech Stack
 - **Frontend**: React 18, Vite, Tailwind CSS, Lucide Icons, Axios.
 - **Backend**: Python 3.10+, FastAPI, Pydantic v2.
 - **LLM Orchestration**: Groq SDK.
 - **Infrastructure**: Redis (Cache/Status Store).
 
-## 🚦 Getting Started
+## Getting Started
 
 ### 1. Environment Configuration
 Create a `.env` file in the root and backend directories (see `.env.example`).
@@ -113,7 +113,7 @@ Run Redis via Docker for the full caching experience:
 docker run -d -p 6379:6379 redis
 ```
 
-## 🔌 API Endpoints
+## API Endpoints
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
 | `POST` | `/api/v1/generate` | Submit a new PPT generation job. |
@@ -121,12 +121,12 @@ docker run -d -p 6379:6379 redis
 | `GET` | `/api/v1/result/{id}` | Retrieve the final generated slide JSON. |
 | `GET` | `/health` | System health check. |
 
-## 📈 Future Roadmap
+## Future Roadmap
 - **Streaming LLM**: Implement Server-Sent Events (SSE) to stream slide content as it's generated for even better UX.
 - **User Authentication**: Secure individual presentation history using Supabase or Clerk.
 - **Advanced Layouts**: Dynamic template selection based on topic category.
 
-## 🚢 Deployment
+## Deployment
 - **Frontend**: Vercel / Netlify.
 - **Backend**: Dockerized FastAPI on AWS App Runner or Railway.app.
 - **Cache**: Managed Redis (Upstash or Redis Cloud).
