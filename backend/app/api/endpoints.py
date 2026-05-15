@@ -1,10 +1,28 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi.responses import FileResponse
+import os
 from uuid import uuid4
+from datetime import datetime
 from ..schemas.ppt import PPTGenerateRequest, JobResponse, JobStatusResponse, PPTResult
 from ..cache.storage import cache_manager
 from ..workers.tasks import generate_ppt_task
 
 router = APIRouter()
+
+@router.get("/download/{job_id}")
+async def download_ppt(job_id: str):
+    """
+    Download the generated .pptx file.
+    """
+    file_path = os.path.join("app/static/exports", f"{job_id}.pptx")
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found or still generating.")
+    
+    return FileResponse(
+        path=file_path,
+        filename=f"presentation_{job_id[:8]}.pptx",
+        media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    )
 
 @router.post("/generate", response_model=JobResponse)
 async def generate_ppt(request: PPTGenerateRequest, background_tasks: BackgroundTasks):
@@ -18,6 +36,7 @@ async def generate_ppt(request: PPTGenerateRequest, background_tasks: Background
         "job_id": job_id,
         "status": "pending",
         "progress": 0,
+        "created_at": datetime.utcnow().isoformat(),
         "result": None,
         "error": None
     })
@@ -56,4 +75,10 @@ async def get_result(job_id: str):
     if job["status"] != "completed":
         raise HTTPException(status_code=400, detail=f"Job is not completed. Current status: {job['status']}")
     
-    return PPTResult(**job["result"])
+    # Merge metrics into the result for the frontend
+    result_data = job["result"]
+    result_data["execution_time"] = job.get("execution_time")
+    result_data["is_cached"] = job.get("is_cached")
+    result_data["download_url"] = job.get("download_url")
+    
+    return PPTResult(**result_data)

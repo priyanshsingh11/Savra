@@ -18,8 +18,9 @@ The system is built on a **Producer-Consumer** pattern mediated by a shared cach
 4. **Observer (Client)**: Polls `/status/{id}` until completion, then fetches `/result/{id}`.
 
 ### B. Caching Layer
-- **Key Strategy**: `result:{topic}:{grade}:{slides}`
-- **TTL**: 1 Hour (Configurable).
+- **Exact Match Cache**: Redis-based key-value store for identical requests.
+- **Semantic Cache (Bonus)**: Uses `all-MiniLM-L6-v2` embeddings to identify contextually similar topics (e.g., "Class 8 Photosynthesis" matches "Grade 8 Photosynthesis").
+- **Similarity Threshold**: 0.92 (Cosine Similarity).
 - **Impact**: Significant reduction in LLM latency and API costs for popular educational topics.
 
 ## 2. Reliability & Fault Tolerance

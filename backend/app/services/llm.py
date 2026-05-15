@@ -25,6 +25,7 @@ class LLMService:
         await asyncio.sleep(2) # Simulate latency
         
         result = {
+            "title": f"The Wonders of {topic}",
             "slides": [
                 {
                     "title": f"Introduction to {topic}",

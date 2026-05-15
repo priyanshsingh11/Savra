@@ -10,6 +10,11 @@ export const usePolling = (jobId, interval = 3000) => {
   const timerRef = useRef(null);
 
   useEffect(() => {
+    // Request notification permission
+    if (Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+
     if (!jobId) return;
 
     const poll = async () => {
@@ -22,9 +27,24 @@ export const usePolling = (jobId, interval = 3000) => {
         if (data.status === 'completed') {
           const finalResult = await pptService.getResult(jobId);
           setResult(finalResult);
+          
+          if (Notification.permission === 'granted') {
+            new Notification('Presentation Ready!', {
+              body: 'Your AI-powered slides have been generated successfully.',
+              icon: '/favicon.ico'
+            });
+          }
+          
           stopPolling();
         } else if (data.status === 'failed') {
           setError(data.error || 'Generation failed');
+          
+          if (Notification.permission === 'granted') {
+            new Notification('Generation Failed', {
+              body: 'There was an error generating your presentation.',
+            });
+          }
+          
           stopPolling();
         }
       } catch (err) {
