@@ -50,15 +50,22 @@ class CacheManager:
     def update_job(self, job_id: str, data: dict):
         current = self.get_job(job_id) or {}
         current.update(data)
-        self.redis.setex(f"job:{job_id}", self.ttl, json.dumps(current))
+        self.set(f"job:{job_id}", current)
 
     def record_stat(self, stat_name: str):
         """Increment a counter in Redis."""
-        self.redis.incr(f"stats:{stat_name}")
+        if self._redis:
+            try:
+                self._redis.incr(f"stats:{stat_name}")
+            except Exception:
+                pass
 
     def get_stats(self):
         """Retrieve all stats and calculate savings."""
-        pipeline = self.redis.pipeline()
+        if not self._redis:
+            return {"total": 0, "semantic_hits": 0, "exact_hits": 0, "llm_calls": 0, "rupees_saved": 0}
+            
+        pipeline = self._redis.pipeline()
         pipeline.get("stats:total_requests")
         pipeline.get("stats:semantic_hits")
         pipeline.get("stats:exact_hits")

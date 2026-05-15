@@ -7,6 +7,7 @@ from ..services.llm import llm_service
 from ..services.ppt_generator import ppt_generator
 from ..cache.semantic import semantic_cache
 from ..config.settings import settings
+from ..services.database import db_service
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +49,7 @@ async def generate_ppt_task(job_id: str, topic: str, grade: str, slides: int):
             "download_url": f"/download/{job_id}",
             "result": cached_result
         })
+        db_service.save_presentation(job_id, topic, grade, cached_result)
         return
 
     # 2. Process with Retries
@@ -77,6 +79,7 @@ async def generate_ppt_task(job_id: str, topic: str, grade: str, slides: int):
                 "download_url": f"/download/{job_id}",
                 "result": ppt_content
             })
+            db_service.save_presentation(job_id, topic, grade, ppt_content)
             logger.info(f"[SUCCESS] Job {job_id} completed with .pptx in {execution_time}s")
             return
             

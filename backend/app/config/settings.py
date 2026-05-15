@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     
     # API Keys
     GROQ_API_KEY: str
+    SUPABASE_URL: Optional[str] = None
+    SUPABASE_KEY: Optional[str] = None
     
     # Cache Config
     REDIS_URL: Optional[str] = None

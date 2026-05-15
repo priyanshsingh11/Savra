@@ -33,4 +33,12 @@ export const pptService = {
     const response = await apiClient.get(`/result/${jobId}`);
     return response.data; // { slides: [...] }
   },
+
+  /**
+   * Get past presentations from Supabase
+   */
+  getHistory: async () => {
+    const response = await apiClient.get('/history');
+    return response.data; // List of past results
+  },
 };

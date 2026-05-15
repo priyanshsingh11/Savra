@@ -7,7 +7,16 @@ from ..schemas.ppt import PPTGenerateRequest, JobResponse, JobStatusResponse, PP
 from ..cache.storage import cache_manager
 from ..workers.tasks import generate_ppt_task
 
+from ..services.database import db_service
+
 router = APIRouter()
+
+@router.get("/history")
+async def get_history(limit: int = 10):
+    """
+    Fetch history from Supabase.
+    """
+    return db_service.get_history(limit=limit)
 
 @router.get("/download/{job_id}")
 async def download_ppt(job_id: str):

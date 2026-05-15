@@ -1,7 +1,7 @@
 import React from 'react';
 import { Presentation, Library, Layout, Settings } from 'lucide-react';
 
-const Navbar = ({ onToggleStats }) => {
+const Navbar = ({ onToggleStats, onToggleHistory }) => {
   return (
     <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 px-6 py-4">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -17,9 +17,12 @@ const Navbar = ({ onToggleStats }) => {
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
           <a href="#" className="hover:text-brand-600 transition-colors">Features</a>
           <a href="#" className="hover:text-brand-600 transition-colors">Pricing</a>
-          <a href="#" className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-900 rounded-lg hover:bg-slate-100 transition-colors">
+          <button 
+            onClick={onToggleHistory}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-900 rounded-lg hover:bg-slate-100 transition-colors"
+          >
             <Library size={16} /> My Library
-          </a>
+          </button>
         </div>
 
         <button 
