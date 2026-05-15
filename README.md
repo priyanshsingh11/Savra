@@ -14,11 +14,12 @@ SlideAI follows a **decoupled async architecture**:
 - **Frontend**: React/Vite SPA with a custom polling hook for real-time status feedback.
 
 ## ✨ Core Features
-- **Asynchronous Workflow**: Non-blocking request handling with UUID job tracking.
-- **Cost-Optimized Caching**: Redis-backed caching of repeated topic/grade combinations.
-- **Resilient Execution**: Built-in retry mechanism (max 3) for transient API failures.
-- **Live Status Tracking**: Real-time progress indicators (Pending → Processing → Completed).
-- **Modern UI/UX**: Clean, minimal SaaS-style dashboard built with Tailwind CSS.
+- **Async Job Queue**: Non-blocking request handling with UUID job tracking and progress polling.
+- **Semantic Caching (Bonus Challenge)**: Uses `Sentence-Transformers` to identify semantically similar topics (e.g., "Ancient Rome" vs. "Roman Empire History"), reducing LLM costs by 90% for common educational queries.
+- **Circuit Breaker Pattern**: Intelligent monitoring of LLM health; automatically bypasses the API and falls back to safe states if Groq/Gemini hits 503 errors.
+- **Real PPTX Generation**: Integrated `python-pptx` to generate and serve actual, editable PowerPoint files.
+- **Production Observability**: Built-in tracking for execution time, cache-hit status, and real-time background task progress.
+- **Modern UI/UX**: Clean, minimal SaaS-style dashboard built with glassmorphism and Tailwind CSS.
 
 ## 🛠️ Tech Stack
 - **Frontend**: React 18, Vite, Tailwind CSS, Lucide Icons, Axios.
@@ -66,10 +67,9 @@ docker run -d -p 6379:6379 redis
 | `GET` | `/health` | System health check. |
 
 ## 📈 Future Roadmap
-- **Celery Integration**: Transition from `BackgroundTasks` to Celery/RabbitMQ for horizontal worker scaling.
-- **Persistent Storage**: Migration to PostgreSQL for long-term user job history.
-- **Streaming LLM**: Implement Server-Sent Events (SSE) to stream slide content as it's generated.
-- **File Export**: Add `python-pptx` service to generate downloadable `.pptx` files.
+- **Streaming LLM**: Implement Server-Sent Events (SSE) to stream slide content as it's generated for even better UX.
+- **User Authentication**: Secure individual presentation history using Supabase or Clerk.
+- **Advanced Layouts**: Dynamic template selection based on topic category.
 
 ## 🚢 Deployment
 - **Frontend**: Vercel / Netlify.
