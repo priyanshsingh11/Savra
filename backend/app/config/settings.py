@@ -17,7 +17,12 @@ class Settings(BaseSettings):
     POLLING_INTERVAL: int = 2
     MAX_RETRIES: int = 3
     
+    # Logging & DB
+    LOG_LEVEL: str = "INFO"
+    DATABASE_URL: Optional[str] = None
+    
     class Config:
         env_file = ".env"
+        extra = "ignore" 
 
 settings = Settings()
