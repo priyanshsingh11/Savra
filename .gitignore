@@ -7,6 +7,11 @@ env/
 /backend/env/
 /backend/.venv/
 
+# AI PPT Generation Data
+backend/app/static/semantic_index.json
+backend/app/static/semantic_vectors.npy
+backend/app/static/exports/*.pptx
+
 # Environment Files
 .env
 .env.local
