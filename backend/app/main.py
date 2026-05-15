@@ -1,5 +1,6 @@
 import logging
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from .api.endpoints import router as api_router
 from .config.settings import settings
 
@@ -16,6 +17,15 @@ app = FastAPI(
     title="AI PPT Generation API",
     description="Scalable, async PPT generation system using Groq LLM",
     version="1.0.0"
+)
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # In production, replace with your frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Include API Router

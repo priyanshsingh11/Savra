@@ -1,67 +1,77 @@
-# AI-Powered PPT Generation System
+# SlideAI: Scalable AI-Powered PPT Generation System
 
-A scalable, asynchronous full-stack application for generating professional PowerPoint presentations using the Groq LLM API.
+SlideAI is a production-grade asynchronous platform designed to transform topics into structured PowerPoint presentation content using Large Language Models (LLMs). Built with a focus on scalability, cost-optimization, and reliable background processing.
 
-## Project Overview
-This project is designed as a production-ready assignment for an AI-powered PPT generation system. It features a Next.js frontend, a FastAPI backend, and an asynchronous job processing system with Redis-ready caching.
+## 🚀 Project Overview
+The system allows users to submit a topic and grade level, which triggers an asynchronous generation pipeline. Instead of blocking the user, the system provides a job ID, allowing the frontend to poll for status updates while the backend handles LLM orchestration and caching.
 
-## Tech Stack
-- **Frontend**: Next.js 14+, Tailwind CSS, Lucide React (Icons), Axios/SWR (API Fetching)
-- **Backend**: FastAPI (Python 3.10+), Pydantic v2
-- **LLM**: Groq API (Llama 3 / Mixtral)
-- **Async Processing**: FastAPI BackgroundTasks (Simulated Job Queue)
-- **Cache**: In-memory / Redis-ready abstraction
-- **Presentation Logic**: `python-pptx` (for backend generation)
+## 🏗️ Architecture Summary
+SlideAI follows a **decoupled async architecture**:
+- **API Layer**: FastAPI handles high-concurrency requests and job submission.
+- **Async Processing**: Integrated `BackgroundTasks` handle non-blocking LLM orchestration.
+- **Cache Layer**: Redis (with in-memory fallback) stores job statuses and deduplicates expensive LLM calls.
+- **LLM Layer**: Groq API (Llama 3 70B) for ultra-fast, high-quality content generation.
+- **Frontend**: React/Vite SPA with a custom polling hook for real-time status feedback.
 
-## Quick Start
-1. **Clone the repository**
-2. **Setup Backend**:
-   ```bash
-   cd backend
-   python -m venv venv
-   source venv/bin/activate # or venv\Scripts\activate on Windows
-   pip install -r requirements.txt
-   cp .env.example .env
-   uvicorn main:app --reload
-   ```
-3. **Setup Frontend**:
-   ```bash
-   cd frontend
-   npm install
-   cp .env.example .env.local
-   npm run dev
-   ```
+## ✨ Core Features
+- **Asynchronous Workflow**: Non-blocking request handling with UUID job tracking.
+- **Cost-Optimized Caching**: Redis-backed caching of repeated topic/grade combinations.
+- **Resilient Execution**: Built-in retry mechanism (max 3) for transient API failures.
+- **Live Status Tracking**: Real-time progress indicators (Pending → Processing → Completed).
+- **Modern UI/UX**: Clean, minimal SaaS-style dashboard built with Tailwind CSS.
 
-## Folder Structure & Purpose
+## 🛠️ Tech Stack
+- **Frontend**: React 18, Vite, Tailwind CSS, Lucide Icons, Axios.
+- **Backend**: Python 3.10+, FastAPI, Pydantic v2.
+- **LLM Orchestration**: Groq SDK.
+- **Infrastructure**: Redis (Cache/Status Store).
 
-### `frontend/`
-- `components/`: Reusable UI components (Button, Card, Input, SlidePreview).
-- `app/`: Next.js App Router pages and layouts.
-- `services/`: API client abstractions and endpoint definitions.
-- `hooks/`: Custom React hooks, including `usePolling` for job status.
-- `lib/`: Utility functions and shared constants.
-- `styles/`: Global CSS and Tailwind configuration.
+## 🚦 Getting Started
 
-### `backend/`
-- `api/`: FastAPI routers and endpoint handlers.
-- `services/`: Business logic, including LLM integration and PPT generation.
-- `core/`: Core configurations, security, and cache abstractions.
-- `models/`: Database models or data structures.
-- `schemas/`: Pydantic models for request/response validation.
-- `worker/`: Background task handlers and job management.
-- `utils/`: Helper functions (logging, retry logic).
+### 1. Environment Configuration
+Create a `.env` file in the root and backend directories (see `.env.example`).
+```env
+GROQ_API_KEY=your_gsk_key
+REDIS_URL=redis://localhost:6379/0
+```
 
-### `architecture/`
-- `design-doc.md`: Technical documentation of system architecture.
+### 2. Backend Setup
+```bash
+cd backend
+python -m venv venv
+# Activate venv
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
 
-## API Endpoint Structure
-- `POST /api/v1/jobs`: Create a new PPT generation job.
-- `GET /api/v1/jobs/{job_id}`: Poll job status and retrieve results.
-- `GET /api/v1/jobs`: List recent jobs (optional).
-- `GET /api/v1/health`: Health check endpoint.
+### 3. Frontend Setup
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-## Environment Variables
-See `.env.example` in both `frontend` and `backend` directories.
-- `GROQ_API_KEY`: Required for LLM generation.
-- `REDIS_URL`: Optional (defaults to in-memory if not provided).
-- `BACKEND_URL`: Used by frontend to connect to FastAPI.
+### 4. Infrastructure (Optional but Recommended)
+Run Redis via Docker for the full caching experience:
+```bash
+docker run -d -p 6379:6379 redis
+```
+
+## 🔌 API Endpoints
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/api/v1/generate` | Submit a new PPT generation job. |
+| `GET` | `/api/v1/status/{id}` | Poll the current status and progress. |
+| `GET` | `/api/v1/result/{id}` | Retrieve the final generated slide JSON. |
+| `GET` | `/health` | System health check. |
+
+## 📈 Future Roadmap
+- **Celery Integration**: Transition from `BackgroundTasks` to Celery/RabbitMQ for horizontal worker scaling.
+- **Persistent Storage**: Migration to PostgreSQL for long-term user job history.
+- **Streaming LLM**: Implement Server-Sent Events (SSE) to stream slide content as it's generated.
+- **File Export**: Add `python-pptx` service to generate downloadable `.pptx` files.
+
+## 🚢 Deployment
+- **Frontend**: Vercel / Netlify.
+- **Backend**: Dockerized FastAPI on AWS App Runner or Railway.app.
+- **Cache**: Managed Redis (Upstash or Redis Cloud).

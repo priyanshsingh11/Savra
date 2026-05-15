@@ -1,45 +1,37 @@
-# Architectural Decisions
+# Engineering Decisions & Tradeoffs
 
-This document outlines the key technical decisions made during the development of the AI-Powered PPT Generation System.
+This document outlines the architectural rationale behind SlideAI, balancing the requirements of a 12-hour engineering assignment with production-ready scalability.
 
-## 1. Async Job Processing: FastAPI BackgroundTasks
-**Decision**: Use FastAPI's built-in `BackgroundTasks` instead of Celery/RabbitMQ for the initial implementation.
-**Rationale**: 
-- Simplifies the architecture for a 12-hour assignment.
-- Avoids the overhead of setting up a message broker.
-- Can be easily refactored to Celery/TaskIQ in the future by swapping the task decorator.
+## 1. Asynchronous Job Architecture
+**Decision**: Use an async-first workflow (Submit → Poll → Result).
+**Rationale**: LLM generation is inherently slow and non-deterministic (5-15 seconds). A synchronous request would block the API worker and lead to client timeouts. By using a job-based system, we keep the API layer highly responsive and provide a superior UX with progress indicators.
 
 ## 2. Polling vs. WebSockets
-**Decision**: Use Client-side Polling (1-2 second intervals).
+**Decision**: Use Client-side Polling (3s interval) instead of WebSockets.
 **Rationale**: 
-- Easier to implement and debug within the timeframe.
-- Less state management required on the backend compared to WebSockets.
-- Sufficient for the expected generation time (5-15 seconds).
+- **Complexity**: WebSockets require managing stateful connections and handling complex reconnection logic on both sides.
+- **Scalability**: For an MVP, polling is stateless and easier to scale behind a standard Load Balancer. 
+- **Tradeoff**: While polling adds minor overhead, the 3s interval is a negligible cost compared to the complexity of maintaining persistent sockets for short-lived generation tasks.
 
-## 3. Cache Layer: Memory-first with Redis Interface
-**Decision**: Implement a generic `CacheProvider` interface that defaults to an in-memory dictionary but supports Redis configuration via environment variables.
+## 3. Redis for Caching & State
+**Decision**: Redis as the primary store for job status and slide results.
 **Rationale**: 
-- Ensures the system is "Redis-ready" without requiring the user to have Redis installed locally.
-- Speeds up repeated requests for the same topic/grade combinations.
+- **Speed**: Ephemeral data like "Job Status" needs sub-millisecond latency.
+- **Cost Optimization**: Repeated requests for common topics (e.g., "Photosynthesis") are served directly from Redis, reducing LLM API costs by 100% for cached hits.
+- **Fallback**: Implemented an in-memory fallback to ensure the system is functional even if Redis infrastructure is unavailable during initial setup.
 
-## 4. LLM Strategy: Groq API
-**Decision**: Use Groq's API for content generation.
+## 4. FastAPI BackgroundTasks
+**Decision**: Use `FastAPI.BackgroundTasks` instead of Celery/RabbitMQ.
 **Rationale**: 
-- Groq provides ultra-fast inference (Llama 3 70B), which is critical for a good user experience during slide generation.
-- Free-tier accessibility for development.
+- **Time Constraint**: Setting up a full Celery/Redis/Broker stack would have taken 20% of the assignment time.
+- **Scale**: `BackgroundTasks` is sufficient for a single-node startup MVP. 
+- **Future Proofing**: The `workers/tasks.py` is written as a standalone module, making the future migration to Celery as simple as changing a decorator.
 
-## 5. Slide Generation: JSON Intermediate Format
-**Decision**: The LLM generates a structured JSON representing the slides, which is then converted to a `.pptx` file (or returned as JSON for frontend preview).
-**Rationale**: 
-- Decouples content generation from file formatting.
-- Allows the frontend to show a "live preview" of the generated content before the user downloads the file.
+## 5. Groq API for LLM
+**Decision**: Groq (Llama 3 70B) for content generation.
+**Rationale**: Groq’s LPU architecture provides inference speeds significantly faster than OpenAI or Anthropic, which is critical for maintaining an "instant-feel" UI in an async generation system.
 
-## 6. Naming Conventions
-- **Files**: PascalCase for React components, camelCase for hooks/services, snake_case for Python files.
-- **API**: kebab-case for URL paths, snake_case for JSON keys (following Python standards) or camelCase (if frontend consistency is preferred). Decided on **snake_case** for API responses to match Pydantic defaults.
-
-## Future Improvements (Scalability)
-1. **Distributed Task Queue**: Migrate `BackgroundTasks` to Celery + Redis for horizontal scaling.
-2. **Object Storage**: Store generated `.pptx` files in AWS S3 or MinIO instead of local disk.
-3. **User Authentication**: Add Supabase or Auth0 for user-specific job tracking.
-4. **Streaming LLM**: Stream slide content to the frontend as it's being generated for an even more responsive feel.
+## 6. Tradeoffs & Limitations
+- **Statelessness**: The current system is stateless across restarts (unless Redis is persistent). For a true production system, a relational database (Postgres) would be added for permanent history.
+- **Security**: Authentication was intentionally omitted to focus on the core engineering pipeline within the 12-hour window.
+- **Local Worker**: The background worker runs in the same process as the API. In a large-scale system, these would be separated into independent services.

@@ -1,33 +1,70 @@
-# System Architecture: AI PPT Generator
+# Technical Design Document: AI PPT Generator
 
-## System Diagram
-```mermaid
-graph TD
-    Client[Next.js Frontend] -- "1. POST /jobs (topic, grade, slides)" --> API[FastAPI Backend]
-    API -- "2. Create Job ID & Queue Task" --> DB[(Job Store/Cache)]
-    API -- "3. Return Job ID (202 Accepted)" --> Client
-    
-    subgraph Background Processing
-        Task[Background Worker] -- "4. Request Content" --> Groq[Groq LLM API]
-        Groq -- "5. Return JSON Structure" --> Task
-        Task -- "6. Update Status: Completed" --> DB
-    end
-    
-    Client -- "7. GET /jobs/{id} (Polling)" --> API
-    API -- "8. Return Job Status/Result" --> Client
+## 1. System Architecture
+The system is built on a **Producer-Consumer** pattern mediated by a shared cache.
+
+### A. Request Lifecycle
+1. **Producer (Client)**: React frontend submits a `PPTGenerateRequest`.
+2. **Orchestrator (FastAPI)**: 
+   - Validates input via Pydantic.
+   - Generates a UUID `job_id`.
+   - Initializes job state in Redis (`status: pending`).
+   - Dispatches a `BackgroundTasks` worker.
+   - Returns `202 Accepted` with the `job_id`.
+3. **Consumer (Worker)**:
+   - Checks Redis for existing results (Deduplication).
+   - Calls Groq API for content generation.
+   - Updates Redis with the result and `status: completed`.
+4. **Observer (Client)**: Polls `/status/{id}` until completion, then fetches `/result/{id}`.
+
+### B. Caching Layer
+- **Key Strategy**: `result:{topic}:{grade}:{slides}`
+- **TTL**: 1 Hour (Configurable).
+- **Impact**: Significant reduction in LLM latency and API costs for popular educational topics.
+
+## 2. Reliability & Fault Tolerance
+### A. Retry Strategy
+Transient failures (LLM timeouts, API rate limits) are handled using an exponential backoff-ready retry loop in the worker:
+- **Max Retries**: 3
+- **Action**: On failure, the job is marked as `failed` with a descriptive error message returned to the UI.
+
+### B. Graceful Failures
+- The `CacheManager` uses a try-except block to fall back to local RAM if Redis is down.
+- Frontend includes error boundaries and "Try Again" triggers to handle backend connectivity issues.
+
+## 3. Cost Reduction Strategy
+- **Deduplication**: Before calling the LLM, the worker checks if the exact same presentation was generated recently.
+- **Structured JSON**: By using LLM "JSON Mode," we ensure the response is always parseable, reducing the need for expensive "correction" calls.
+- **Estimated Savings**: For an educational platform with repeating curricula, caching can reduce LLM costs by up to 60-80%.
+
+## 4. Scaling Plan (Roadmap)
+### Short Term (Scale Up)
+- Increase worker concurrency in FastAPI.
+- Deploy Redis with Persistence (RDB/AOF).
+
+### Medium Term (Scale Out)
+- **Broker Migration**: Move from `BackgroundTasks` to **Celery + Redis/RabbitMQ**.
+- **Independent Workers**: Spin up dedicated worker containers that listen to the Redis queue, allowing the API and Workers to scale independently.
+- **Database**: Add **PostgreSQL** to move from ephemeral job tracking to persistent user histories.
+
+## 5. Textual Flow Diagram
+```text
+[ USER ] 
+   │
+   ▼
+[ React SPA ] ───( Polls Status )───┐
+   │                                │
+   ▼                                │
+[ FastAPI API ] ───( Writes )───▶ [ Redis Cache ]
+   │                                ▲
+   ▼                                │
+[ Background Worker ] ──( Updates )─┘
+   │
+   ▼
+[ Groq LLM API ]
 ```
 
-## Data Flow
-1. **Submission**: User submits a form with PPT parameters.
-2. **Acceptance**: Backend validates the request, generates a UUID, stores a "pending" job in the cache, and triggers a background task.
-3. **Generation**:
-    - The background task prompts Groq with a system message optimized for PPT structure.
-    - The LLM returns a structured JSON (title, slides, content per slide).
-    - The task updates the job entry with the content and marks it as "completed".
-4. **Polling**: The frontend uses a custom hook to check the status every 2 seconds. Once "completed", it renders the preview.
-
-## Scalability Considerations
-- **Stateless API**: The FastAPI app is stateless, allowing multiple instances to run behind a load balancer.
-- **Cache Persistence**: Moving from in-memory to Redis allows job status to be shared across multiple backend workers.
-- **Rate Limiting**: Implementation of rate limiting on the `/jobs` endpoint to prevent API abuse.
-- **Error Handling**: Graceful degradation if the LLM fails (e.g., retry logic or returning a partial PPT).
+## 6. Assumptions & Limitations
+- **Assumptions**: Users prefer a "Generation Started" message over waiting 10 seconds for a response.
+- **Limitations**: In-memory job tracking (without Redis) is lost on server restart. 
+- **Intentional Omissions**: User Authentication and File Storage (S3) were skipped to focus on the core async pipeline.
