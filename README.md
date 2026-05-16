@@ -6,65 +6,8 @@ SlideAI is a production-grade asynchronous platform designed to transform topics
 The system allows users to submit a topic and grade level, which triggers an asynchronous generation pipeline. Instead of blocking the user, the system provides a job ID, allowing the frontend to poll for status updates while the backend handles LLM orchestration and caching.
 
 ## System Architecture
-```mermaid
-graph TD
-    subgraph User_Layer [User Layer]
-        Teacher((Teacher))
-    end
+![System Architecture](architecture/diagram.png)
 
-    subgraph Frontend_Layer [Frontend - React/Tailwind]
-        UI[PPT Request Form]
-        Poll[Job Progress UI]
-        View[Results Viewer]
-    end
-
-    subgraph API_Layer [API Layer - FastAPI]
-        Post["POST /generate"]
-        Status["GET /status/{id}"]
-        Result["GET /result/{id}"]
-    end
-
-    subgraph Cache_Layer [Cache & State - Redis]
-        Redis[(Redis)]
-        Jobs[Job Status Store]
-        SemCache[Semantic Cache]
-    end
-
-    subgraph Async_Layer [Async Processing]
-        Worker[Background Worker]
-        Router{Smart Router}
-        Retry[Retry Handler]
-    end
-
-    subgraph AI_Layer [AI Layer - Groq]
-        L8B[Llama 3.1 8B - Light]
-        L70B[Llama 3.3 70B - Heavy]
-        Circuit[Circuit Breaker]
-    end
-
-    subgraph Analytics_Layer [Analytics]
-        Dash[Cost Savings Dashboard]
-    end
-
-    %% Relationships
-    Teacher --> UI
-    UI --> Post
-    Post --> Jobs
-    Post --> Worker
-    Poll -- polling --- Status
-    Status --> Jobs
-    View -- get --- Result
-    Result --> Jobs
-
-    Worker --> SemCache
-    Worker --> Router
-    Router --> L8B
-    Router --> L70B
-    L8B & L70B --> Circuit
-    Circuit -- fallback --- Worker
-    
-    Jobs & SemCache --> Dash
-```
 
 SlideAI follows a **decoupled async architecture** designed for high reliability and cost-efficiency.
 

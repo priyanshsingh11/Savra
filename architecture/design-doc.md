@@ -50,22 +50,9 @@ Transient failures (LLM timeouts, API rate limits) are handled using an exponent
 - **Independent Workers**: Spin up dedicated worker containers that listen to the Redis queue, allowing the API and Workers to scale independently.
 - **Database**: Add **PostgreSQL** to move from ephemeral job tracking to persistent user histories.
 
-## 5. Textual Flow Diagram
-```text
-[ USER ] 
-   │
-   ▼
-[ React SPA ] ───( Polls Status )───┐
-   │                                │
-   ▼                                │
-[ FastAPI API ] ───( Writes )───▶ [ Redis Cache ]
-   │                                ▲
-   ▼                                │
-[ Background Worker ] ──( Updates )─┘
-   │
-   ▼
-[ Groq LLM API ]
-```
+## 5. System Architecture Diagram
+![System Architecture](diagram.png)
+
 
 ## 6. Assumptions & Limitations
 - **Assumptions**: Users prefer a "Generation Started" message over waiting 10 seconds for a response.
