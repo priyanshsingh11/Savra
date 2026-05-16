@@ -42,7 +42,7 @@ Example Initial Job State:
 
 ```json
 {
-  "job_id": "abc123",
+  "job_id": "abc36",
   "status": "pending"
 }
 ```
@@ -463,7 +463,7 @@ This provides visibility into system efficiency and optimization impact.
 
 ## Intentional Omissions
 
-The following were intentionally skipped to prioritize core system architecture within the 12-hour engineering window:
+The following were intentionally skipped to prioritize core system architecture within the 36-hour engineering window:
 
 - Authentication
 - User management
